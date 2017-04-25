@@ -34,23 +34,23 @@ To store data, use suitable database engine.
 
 
 
-## running
+## Running
 
 made to run linux machines with >python2.7 installed
 
 
-## installing dependences
+## Install dependences
 ```
 pip install flask
 ```
 
-## run
+## Run api
 ```
 ./app.py
 ```
 
 
-## testing with curl
+## Testing with curl
 
 ``` bash
 
@@ -114,7 +114,7 @@ curl "http://localhost:5000/api/v1.0/catalog?limit=1&sortby=price"
 
 --
 
-## why this and that
+## Why this and that
 
 ### why python?
 Well as it's was suposed to be JSON api I decided it would be easier to do with nodejs or python as I'm familiar with both languages and JSON is well supported.
@@ -136,14 +136,16 @@ No particular reason just looked for something simple and fast, flask just looke
 It's a failure because of miss-reading customer requirements about database, leading to do work that need to be re-writed and some can't be done until it's done.
 But to be my first api it at least it works for point I did it, maybe with little more time and more planning it could have been completed.
 
-What works: See heading "testing with curl"
+What works: 
+ - See section [testing with curl](https://github.com/garismaatti/JSON-api#testing-with-curl)
  - TASK1 - Adding/removing/editing products in product catalog
  - TASK2 - Adding/removing/editing products in shopping basket
  - TASK3 - Querying products from product catalog with row limit and sort by name or price
  - constrain not to add to basked if all is already recerved
  - trying to add basket more then catalog has, will just add what there is left to add
 
-What's not done:
+
+What doesn't:
  - proper SQL-database
  - TASK4. Querying products from product catalog, grouped
  - TASK5. Searching product from catalog
