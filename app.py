@@ -3,8 +3,11 @@
 #
 # 2017-04-24 by Ari Salopää
 #
-# Versio 1
-# TASK 1, 2 and 3 done
+# TASK1 done
+# TASK2 done
+# TASK3 done
+# TASK4 missing
+# TASK5 missing
 '''
 CHALLENGE 1.
 
@@ -77,7 +80,7 @@ basket = [
     {
         'user_id': 'cookie',
         'product_id': 1,
-        'amount': 120,
+        'amount': 20,
         'add_time': time.strftime("%G-%m-%dT%TZ"),
         'mod_time': time.strftime("%G-%m-%dT%TZ")
     }
@@ -87,8 +90,13 @@ basket = [
 # handle error - 400 bad request
 @app.errorhandler(400)
 def not_found(error):
-    if error.description['message']:
-        return make_response(jsonify( { 'error': 'Bad request, ' +str(error.description['message']) } ), 400)
+    message = None
+    try:
+        message = error.description['message']
+    except:
+        pass
+    if message:
+        return make_response(jsonify( { 'error': 'Bad request, ' +str(message) } ), 400)
     return make_response(jsonify( { 'error': 'Bad request' } ), 400)
 
 # handle error - 404 not found
@@ -96,10 +104,28 @@ def not_found(error):
 def not_found(error):
     return make_response(jsonify( { 'error': 'Not found' } ), 404)
 
-# handle error - 409 Conflict
-@app.errorhandler(409)
+
+# handle error - 403 Forbidden
+@app.errorhandler(403)
 def not_found(error):
-    return make_response(jsonify( { 'error': 'Conflict, already exist!' } ), 404)
+    message = None
+    try:
+        message = error.description['message']
+    except:
+        pass
+    if message:
+        return make_response(jsonify( { 'error': 'Forbidden, ' +str(message) } ), 403)
+    return make_response(jsonify( { 'error': 'Forbidden' } ), 403)
+
+
+
+#func to get items reserved
+def get_amount_of_already_reserved(product_id, l_basket):
+    items = filter(lambda t: t['product_id'] == product_id, l_basket)
+    reserved = 0
+    for m in items:
+        reserved = reserved + m.get('amount', 0)
+    return reserved
 
 
 # modify items returned throu api
@@ -117,6 +143,9 @@ def make_public_item(item):
             pass
         elif field == 'mod_person':
             pass
+        elif field == 'amount':
+            reserved = get_amount_of_already_reserved(item['id'], basket)
+            new_item['amount'] = item['amount'] - reserved
         else:
             new_item[field] = item[field]
     return new_item
@@ -124,13 +153,13 @@ def make_public_item(item):
 
 
 
-### TASK 1
+### TASK1
 
 # GET catalog
 @app.route('/api/v1.0/catalog', methods = ['GET'])
 #@auth.login_required
 def get_catalog():
-    ### TASK 3
+    ### TASK3
     fullCatalog = map(make_public_item, catalog)
     try:
         limit = int( request.args.get('limit', '0') )  #limit result
@@ -221,16 +250,24 @@ def update_item(item_id):
 #@auth.login_required
 def delete_item(item_id):
     item = filter(lambda t: t['id'] == item_id, catalog)
+    basket_items = filter(lambda t: t['product_id'] == item_id, basket)
     if len(item) == 0:
         abort(404)
     catalog.remove(item[0])
+    #also remove reserved items
+    for j in basket_items:
+        basket.remove(j)
     return jsonify( { 'result': True } )
 
 
 
 
 
-### TASK 2
+
+
+
+
+### TASK2
 
 # modify items returned throu api
 def make_public_basket_item(item):
@@ -246,6 +283,7 @@ def make_public_basket_item(item):
         else:
             new_item[field] = item[field]
     return new_item
+
 
 # GET basket items for user
 @app.route('/api/v1.0/basket/<user_id>', methods = ['GET'])
@@ -278,18 +316,25 @@ def create_basket_item():
     or not 'amount' in request.json:
         abort(400)
     #if product_id does not exist
-    ex_item = filter(lambda t: t['id'] == request.json['product_id'], catalog)
-    if len(ex_item) == 0:
+    catalog_item = filter(lambda t: t['id'] == request.json['product_id'], catalog)
+    if len(catalog_item) == 0:
         abort(400, {'message': 'product_id does not exist!'})
     #if product_id already in list, (do not allow dublicates)
     user_items = filter(lambda t: t['user_id'] == request.json['user_id'], basket)
     ex_item = filter(lambda t: t['product_id'] == request.json['product_id'], user_items)
     if len(ex_item) > 0:
         abort(400, {'message': 'product_id already listed!'})
+    #calculate amount of already reserved
+    reserved = get_amount_of_already_reserved(request.json['product_id'], basket)
+    if catalog_item[0].get('amount') <= reserved:
+        abort(403, {'message': 'all items are already reserved!'})
+    reserve = request.json['amount']
+    if catalog_item[0].get('amount') <= reserved + reserve:
+        reserve = catalog_item[0].get('amount') - reserved
     item = {
         'user_id': request.json['user_id'],
         'product_id': request.json['product_id'],
-        'amount': request.json['amount'],
+        'amount': reserve,
         'add_time': time.strftime("%G-%m-%dT%TZ"),
         'mod_time': time.strftime("%G-%m-%dT%TZ")
     }
@@ -322,7 +367,16 @@ def update_basket_item(user_id, item_id):
         abort(400)
     if 'amount' in request.json and type(request.json['amount']) is not int:
         abort(400)
-    item[0]['amount'] = request.json.get('amount', item[0]['amount'])
+    #calculate amount of already reserved
+    catalog_item = filter(lambda t: t['id'] == item_id, catalog)
+    reserved = get_amount_of_already_reserved(item_id, basket)
+    if catalog_item[0].get('amount') <= reserved:
+        abort(403, {'message': 'all items are already reserved!'})
+    reserve = request.json.get('amount', 0)
+    if catalog_item[0].get('amount') <= reserved + reserve:
+        #take all we can get by calculating what if left + what we already had reserved
+        reserve = catalog_item[0].get('amount') - reserved + item[0]['amount']
+    item[0]['amount'] = reserve
     item[0]['mod_time'] = time.strftime("%G-%m-%dT%TZ")
     return jsonify( { 'item': make_public_basket_item(item[0]) } )
 
