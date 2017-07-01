@@ -4,11 +4,13 @@
 import app as app
 import os, time
 import unittest
-
+import flask
 
 
 class TestCase(unittest.TestCase):
     def setUp(self):
+        app.app.config['TESTING'] = True
+	self.app = app.app.test_client()	
         pass
 
     def tearDown(self):
@@ -27,7 +29,7 @@ class TestCase(unittest.TestCase):
             'mod_time': '2017-04-23T16:15:58Z',
             'mod_person': 'test'
         }
-        n_item = app.make_public_item(item)
+        n_item = self.make_public_item(item)
         expected_item = {
             'id': 1,
             'name': 'Apples',
@@ -47,7 +49,7 @@ class TestCase(unittest.TestCase):
             'add_time': time.strftime("%G-%m-%dT%TZ"),
             'mod_time': time.strftime("%G-%m-%dT%TZ")
         }
-        n_item = app.make_public_basket_item(item)
+        n_item = self.make_public_basket_item(item)
         expected_item = {
           "amount": 20,
           "product_id": 1,

@@ -117,13 +117,14 @@ curl "http://localhost:5000/api/v1.0/catalog?limit=1&sortby=price"
 ## Why this and that
 
 ### why python?
-Well as it's was suposed to be JSON api I decided it would be easier to do with nodejs or python as I'm familiar with both languages and JSON is well supported.
-I just go with python as I'm done more testing automation with python.
+Well as it's was suposed to be JSON api I decided it would be easier to do with nodejs or python, as I'm familiar with both languages and JSON is well supported in them both.
+In the end I decided to go with a python, as I'm done more testing with python.
 
 
-### why dict database?
-Not fully reading/undertanding "customer requirements" enough and dict was just easier/faster to start.
+### Why dict database?
+Not fully reading/undertanding "customer requirements" enough and dict was just easier/faster to start. (missed word "engine" after database...) 
 
+After reaching deadline, I can only blame myself for not choosing SQLITE or some other SQL database from the start, well maybe on version 2.
 
 ### why flask?
 No particular reason just looked for something simple and fast, flask just looked simpliest from found 3.
